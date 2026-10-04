@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Регистрация — Перекуп{% endblock %}
+{% block body %}
+<div class="container" style="max-width:420px; margin-top:60px;">
+  <div class="card">
+    <h1>Регистрация</h1>
+    {% with m = get_flashed_messages() %}{% if m %}{% for x in m %}<div class="flash">{{x}}</div>{% endfor %}{% endif %}{% endwith %}
+    <form method="post" class="row">
+      <div class="field"><label>Логин</label><input name="username" required autocomplete="username"></div>
+      <div class="field"><label>Пароль</label><input name="password" type="password" required autocomplete="new-password"></div>
+      <button type="submit">Создать аккаунт</button>
+    </form>
+    <p style="margin-top:14px; text-align:center;">Уже есть аккаунт? <a href="{{ url_for('auth.login') }}">Войти</a></p>
+  </div>
+</div>
+{% endblock %}

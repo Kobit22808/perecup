@@ -1,0 +1,169 @@
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: #0f172a; color: #e2e8f0; margin: 0; padding: 20px;
+  line-height: 1.4;
+}
+.container { max-width: 1200px; margin: 0 auto; }
+h1 { margin: 0 0 16px; font-size: 26px; }
+h2 { margin: 0 0 14px; font-size: 20px; }
+h3 { margin: 0 0 10px; }
+
+.card {
+  background: #1e293b; border-radius: 12px; padding: 20px;
+  margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,.3);
+}
+
+input, select, textarea, button {
+  font: inherit; padding: 9px 11px; border-radius: 8px;
+  border: 1px solid #334155; background: #0f172a; color: #e2e8f0; width: 100%;
+}
+input:focus, select:focus, textarea:focus {
+  outline: 2px solid #3b82f6; outline-offset: 0; border-color: transparent;
+}
+button {
+  background: #3b82f6; border: none; cursor: pointer; padding: 11px; font-weight: 600;
+}
+button:hover { background: #2563eb; }
+button:active { transform: scale(0.98); }
+.btn-danger { background: #ef4444; }
+.btn-danger:hover { background: #dc2626; }
+.btn-sm { padding: 7px 12px; font-size: 13px; width: auto; }
+
+.row { display: grid; gap: 10px; }
+.form-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+.field { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.field label {
+  font-size: 12px; color: #94a3b8; text-transform: uppercase;
+  letter-spacing: .03em;
+}
+.flash { padding: 12px; background: #7f1d1d; border-radius: 8px; margin-bottom: 12px; }
+
+.top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; gap: 10px; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px,1fr)); gap: 12px; margin-bottom: 16px; }
+.stat { background: #1e293b; padding: 16px; border-radius: 12px; }
+.stat .label { color: #94a3b8; font-size: 12px; text-transform: uppercase; letter-spacing: .03em; }
+.stat .value { font-size: 22px; font-weight: 700; margin-top: 6px; }
+.stat.balance { background: linear-gradient(135deg, #1e40af 0%, #1e293b 100%); }
+
+.profit-pos { color: #22c55e; }
+.profit-neg { color: #ef4444; }
+
+.badge {
+  padding: 3px 9px; border-radius: 12px; font-size: 12px;
+  background: #334155; display: inline-block; white-space: nowrap;
+}
+.badge.sold { background: #166534; }
+.badge.part { background: #1e40af; }
+.badge.work { background: #7c2d12; }
+
+a { color: #60a5fa; text-decoration: none; }
+.muted { color: #94a3b8; font-size: 13px; }
+.balance-form { display: flex; gap: 10px; align-items: flex-end; max-width: 460px; }
+.balance-form .field { flex: 1; }
+
+/* ============ Карточки машин ============ */
+.car-list { display: flex; flex-direction: column; gap: 10px; }
+.car-card {
+  background: #0f172a; border: 1px solid #334155;
+  border-radius: 10px; overflow: hidden; transition: border-color .15s;
+  position: relative;
+}
+.car-card[open] { border-color: #3b82f6; }
+.car-card > summary {
+  padding: 14px 16px; list-style: none; cursor: pointer; color: inherit;
+}
+.car-card > summary::-webkit-details-marker { display: none; }
+.car-card > summary::after {
+  content: "▾"; position: absolute; top: 14px; right: 14px;
+  color: #64748b; transition: transform .15s;
+}
+.car-card[open] > summary::after { transform: rotate(180deg); }
+
+.car-summary {
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 12px; flex-wrap: wrap; padding-right: 20px;
+}
+.car-name { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 16px; }
+.car-numbers { display: flex; gap: 18px; flex-wrap: wrap; }
+.car-numbers > div { display: flex; flex-direction: column; gap: 2px; min-width: 70px; }
+.cn-label { font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: .03em; }
+.cn-value { font-size: 14px; font-weight: 600; }
+
+.car-body {
+  padding: 14px 16px 16px;
+  border-top: 1px solid #334155;
+  background: #1e293b;
+}
+
+.records { display: flex; flex-direction: column; gap: 6px; }
+.record {
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 10px; padding: 8px 10px; background: #0f172a;
+  border-radius: 8px; font-size: 14px;
+}
+.record-left { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0; }
+.record-desc { flex: 1; min-width: 100px; }
+.record-right { display: flex; align-items: center; gap: 8px; }
+
+/* ============ Мобильная версия ============ */
+@media (max-width: 768px) {
+  body { padding: 12px; font-size: 15px; }
+  .container { max-width: 100%; }
+
+  h1 { font-size: 20px; margin-bottom: 0; }
+  h2 { font-size: 17px; margin-bottom: 12px; }
+  h3 { font-size: 15px; }
+
+  .card { padding: 14px; border-radius: 10px; margin-bottom: 12px; }
+  .top { flex-direction: row; align-items: center; }
+  .top button { width: auto; padding: 8px 14px; min-height: 40px; }
+
+  input, select, textarea, button {
+    font-size: 16px; padding: 12px 14px; min-height: 46px;
+  }
+  button { font-size: 16px; }
+  .btn-sm { min-height: 38px; padding: 8px 12px; font-size: 14px; }
+
+  .stats { grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+  .stat { padding: 12px; border-radius: 10px; }
+  .stat .label { font-size: 10px; }
+  .stat .value { font-size: 18px; margin-top: 4px; }
+
+  .form-grid { grid-template-columns: 1fr !important; gap: 12px; }
+  .field[style*="span 2"],
+  .field[style*="grid-column"] { grid-column: span 1 !important; }
+  .form-grid button[style*="grid-column"] { grid-column: 1 / -1 !important; }
+
+  .balance-form { flex-direction: column; align-items: stretch; max-width: 100%; gap: 8px; }
+  .balance-form button { width: 100%; }
+
+  .car-card > summary { padding: 12px 14px; }
+  .car-card > summary::after { top: 12px; right: 12px; }
+  .car-summary { flex-direction: column; align-items: stretch; gap: 10px; padding-right: 20px; }
+  .car-name { font-size: 15px; }
+  .car-numbers {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px 10px;
+    padding-top: 10px; border-top: 1px dashed #334155;
+  }
+  .car-numbers > div { min-width: 0; }
+  .cn-label { font-size: 10px; }
+  .cn-value { font-size: 14px; }
+  .car-body { padding: 12px; }
+
+  .record { flex-direction: column; align-items: stretch; gap: 6px; padding: 10px; }
+  .record-left { justify-content: flex-start; }
+  .record-right { justify-content: space-between; }
+
+  .flash { font-size: 14px; padding: 10px; }
+  .muted { font-size: 13px; }
+}
+
+@media (max-width: 420px) {
+  .stats { grid-template-columns: 1fr; }
+}
+
+.car-card.sold { opacity: 0.85; }
+.car-card.sold > summary { cursor: pointer; }
+.car-card.sold[open] { border-color: #166534; opacity: 1; }

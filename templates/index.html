@@ -1,0 +1,323 @@
+{% extends "base.html" %}
+{% block title %}Перекуп — {{ username }}{% endblock %}
+{% block body %}
+<div class="container">
+  <div class="top">
+    <h1>🚗 Перекуп — {{ username }}</h1>
+    <a href="{{ url_for('auth.logout') }}"><button class="btn-sm">Выйти</button></a>
+  </div>
+
+  {% with m = get_flashed_messages() %}{% if m %}{% for x in m %}<div class="flash">{{x}}</div>{% endfor %}{% endif %}{% endwith %}
+
+  <!-- ============ Статистика ============ -->
+  <div class="stats">
+    <div class="stat balance">
+      <div class="label">💵 Свободные деньги</div>
+      <div class="value {% if current_balance >= 0 %}profit-pos{% else %}profit-neg{% endif %}">
+        {{ "%.0f"|format(current_balance) }} ₽
+      </div>
+    </div>
+    <div class="stat">
+      <div class="label">Начальный капитал</div>
+      <div class="value">{{ "%.0f"|format(initial_balance) }} ₽</div>
+    </div>
+        <div class="stat">
+      <div class="label">💼 В обороте</div>
+      <div class="value">{{ "%.0f"|format(active_invested) }} ₽</div>
+    </div>
+    <div class="stat">
+      <div class="label">Продано</div>
+      <div class="value">{{ "%.0f"|format(total_sold) }} ₽</div>
+    </div>
+    <div class="stat">
+      <div class="label">Прибыль</div>
+      <div class="value {% if total_profit >= 0 %}profit-pos{% else %}profit-neg{% endif %}">
+        {{ "%+.0f"|format(total_profit) }} ₽
+      </div>
+    </div>
+    <div class="stat"><div class="label">Машин</div><div class="value">{{ active_cars|length + sold_cars|length }}</div></div>
+  </div>
+
+  <!-- ============ Начальный капитал ============ -->
+  <div class="card">
+    <h2>💰 Начальный капитал</h2>
+    <p class="muted" style="margin-top:-6px;">
+      Сколько денег было у тебя в обороте до первой машины. Меняй, если добавлял или забирал деньги извне.
+      Текущий баланс выше считается автоматически: капитал − вложения + продажи.
+    </p>
+    <form method="post" action="{{ url_for('cars.set_balance') }}" class="balance-form">
+      <div class="field">
+        <label>Начальный капитал, ₽</label>
+        <input name="initial_balance" type="number" step="0.01" value="{{ initial_balance }}" inputmode="decimal">
+      </div>
+      <button type="submit" class="btn-sm">Сохранить</button>
+    </form>
+  </div>
+
+  <!-- ============ Добавить машину ============ -->
+  <div class="card">
+    <h2>➕ Добавить машину</h2>
+    <form method="post" action="{{ url_for('cars.add') }}" class="row form-grid">
+      <div class="field" style="grid-column: span 2;">
+        <label>Название машины</label>
+        <input name="name" placeholder="Toyota Camry 2015" required>
+      </div>
+      <div class="field">
+        <label>Цена покупки, ₽</label>
+        <input name="buy_price" type="number" step="0.01" value="0" inputmode="decimal">
+      </div>
+      <div class="field">
+        <label>Прочие затраты, ₽</label>
+        <input name="expenses" type="number" step="0.01" value="0" inputmode="decimal">
+      </div>
+      <div class="field">
+        <label>Цена продажи, ₽</label>
+        <input name="sell_price" type="number" step="0.01" value="0" inputmode="decimal">
+      </div>
+      <div class="field">
+        <label>Статус</label>
+        <select name="status">
+          <option value="в работе">В работе</option>
+          <option value="продана">Продана</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Заметки</label>
+        <input name="notes" placeholder="VIN, контакты">
+      </div>
+      <button type="submit" style="grid-column: 1 / -1;">Добавить машину</button>
+    </form>
+  </div>
+
+  <!-- ============ Добавить деталь/работу ============ -->
+  <div class="card">
+    <h2>🔧 Записать деталь или работу</h2>
+    {% if active_cars %}
+      <p class="muted" style="margin-top:-6px;">Выбери машину, укажи что куплено или сделано — сумма автоматически прибавится к стоимости машины и вычтется из свободных денег. В списке только машины в работе.</p>
+      <form method="post" action="{{ url_for('cars.add_item') }}" class="row form-grid">
+        <div class="field" style="grid-column: span 2;">
+          <label>Машина</label>
+          <select name="car_id" required>
+            {% for c in active_cars %}
+              <option value="{{ c.id }}">#{{ c.id }} — {{ c.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label>Тип</label>
+          <select name="kind">
+            <option value="деталь">Деталь</option>
+            <option value="работа">Работа</option>
+          </select>
+        </div>
+        <div class="field" style="grid-column: span 2;">
+          <label>Что куплено / сделано</label>
+          <input name="description" placeholder="напр. Замена масла" required>
+        </div>
+        <div class="field">
+          <label>Сумма, ₽</label>
+          <input name="amount" type="number" step="0.01" placeholder="0" required inputmode="decimal">
+        </div>
+        <button type="submit" style="grid-column: 1 / -1;">Записать в машину</button>
+      </form>
+    {% elif sold_cars %}
+      <p class="muted">Все машины проданы. Добавь новую или верни проданную в работу.</p>
+    {% else %}
+      <p class="muted">Сначала добавь хотя бы одну машину.</p>
+    {% endif %}
+  </div>
+
+  <!-- ============ Машины в работе ============ -->
+  <div class="card">
+    <h2>🟢 В работе <span class="muted">({{ active_cars|length }})</span></h2>
+    {% if active_cars %}
+      <div class="car-list">
+      {% for c in active_cars %}
+        <details class="car-card">
+          <summary>
+            <div class="car-summary">
+              <div class="car-name">
+                <b>{{ c.name }}</b>
+                <span class="badge">{{ c.status }}</span>
+                <span class="muted">· {{ c.records|length }} записей</span>
+              </div>
+              <div class="car-numbers">
+                <div>
+                  <span class="cn-label">Покупка</span>
+                  <span class="cn-value">{{ "%.0f"|format(c.buy_price) }} ₽</span>
+                </div>
+                <div>
+                  <span class="cn-label">Вложено</span>
+                  <span class="cn-value">{{ "%.0f"|format(c.invested) }} ₽</span>
+                </div>
+                <div>
+                  <span class="cn-label">Продажа</span>
+                  <span class="cn-value">{{ "%.0f"|format(c.sell_price) }} ₽</span>
+                </div>
+                <div>
+                  <span class="cn-label">Прибыль</span>
+                  <span class="cn-value {% if c.sell_price and c.profit >= 0 %}profit-pos{% elif c.sell_price and c.profit < 0 %}profit-neg{% endif %}">
+                    {% if c.sell_price %}{{ "%+.0f"|format(c.profit) }} ₽{% else %}—{% endif %}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </summary>
+
+          <div class="car-body">
+            <h3>Расходы по машине</h3>
+            {% if c.records %}
+              <div class="records">
+                {% for i in c.records %}
+                <div class="record">
+                  <div class="record-left">
+                    <span class="badge {% if i.kind == 'работа' %}work{% else %}part{% endif %}">{{ i.kind }}</span>
+                    <span class="record-desc">{{ i.description }}</span>
+                    <span class="muted">{{ i.created_at[:10] }}</span>
+                  </div>
+                  <div class="record-right">
+                    <b>{{ "%.0f"|format(i.amount) }} ₽</b>
+                    <form method="post" action="{{ url_for('cars.delete_item', item_id=i.id) }}"
+                          onsubmit="return confirm('Удалить запись?');" style="margin:0;">
+                      <button type="submit" class="btn-sm btn-danger" title="Удалить">×</button>
+                    </form>
+                  </div>
+                </div>
+                {% endfor %}
+              </div>
+              <p class="muted" style="margin:8px 0 0;">
+                Итого по расходам: <b style="color:#e2e8f0;">{{ "%.0f"|format(c.records_total) }} ₽</b>
+              </p>
+            {% else %}
+              <p class="muted" style="margin:0;">Пока нет записей. Добавь деталь или работу в форме выше.</p>
+            {% endif %}
+
+            <h3 style="margin-top:18px;">Редактировать машину</h3>
+            <form method="post" action="{{ url_for('cars.edit', car_id=c.id) }}" class="row form-grid">
+              <div class="field" style="grid-column: span 2;">
+                <label>Название</label>
+                <input name="name" value="{{ c.name }}" required>
+              </div>
+              <div class="field">
+                <label>Цена покупки, ₽</label>
+                <input name="buy_price" type="number" step="0.01" value="{{ c.buy_price }}" inputmode="decimal">
+              </div>
+              <div class="field">
+                <label>Прочие затраты, ₽</label>
+                <input name="expenses" type="number" step="0.01" value="{{ c.expenses }}" inputmode="decimal">
+              </div>
+              <div class="field">
+                <label>Цена продажи, ₽</label>
+                <input name="sell_price" type="number" step="0.01" value="{{ c.sell_price }}" inputmode="decimal">
+              </div>
+              <div class="field">
+                <label>Статус</label>
+                <select name="status">
+                  <option value="в работе" {% if c.status=='в работе' %}selected{% endif %}>В работе</option>
+                  <option value="продана" {% if c.status=='продана' %}selected{% endif %}>Продана</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Заметки</label>
+                <input name="notes" value="{{ c.notes or '' }}">
+              </div>
+              <button type="submit" class="btn-sm" style="grid-column: 1 / -1;">Сохранить</button>
+            </form>
+
+            <form method="post" action="{{ url_for('cars.delete', car_id=c.id) }}"
+                  onsubmit="return confirm('Удалить машину вместе со всеми записями?');"
+                  style="margin-top:8px;">
+              <button type="submit" class="btn-sm btn-danger">Удалить машину</button>
+            </form>
+          </div>
+        </details>
+      {% endfor %}
+      </div>
+    {% else %}
+      <p class="muted">Нет машин в работе.</p>
+    {% endif %}
+  </div>
+
+  <!-- ============ Проданные машины ============ -->
+  <div class="card">
+    <h2>✅ Проданные <span class="muted">({{ sold_cars|length }})</span></h2>
+    {% if sold_cars %}
+      <p class="muted" style="margin-top:-6px;">Проданные машины только для просмотра. Редактирование и добавление расходов закрыто.</p>
+      <div class="car-list">
+      {% for c in sold_cars %}
+        <details class="car-card sold">
+          <summary>
+            <div class="car-summary">
+              <div class="car-name">
+                <b>{{ c.name }}</b>
+                <span class="badge sold">продана</span>
+                <span class="muted">· {{ c.records|length }} записей</span>
+              </div>
+              <div class="car-numbers">
+                <div>
+                  <span class="cn-label">Вложено</span>
+                  <span class="cn-value">{{ "%.0f"|format(c.invested) }} ₽</span>
+                </div>
+                <div>
+                  <span class="cn-label">Продажа</span>
+                  <span class="cn-value">{{ "%.0f"|format(c.sell_price) }} ₽</span>
+                </div>
+                <div>
+                  <span class="cn-label">Прибыль</span>
+                  <span class="cn-value {% if c.profit >= 0 %}profit-pos{% else %}profit-neg{% endif %}">
+                    {{ "%+.0f"|format(c.profit) }} ₽
+                  </span>
+                </div>
+              </div>
+            </div>
+          </summary>
+
+          <div class="car-body">
+            <h3>Расходы по машине</h3>
+            {% if c.records %}
+              <div class="records">
+                {% for i in c.records %}
+                <div class="record">
+                  <div class="record-left">
+                    <span class="badge {% if i.kind == 'работа' %}work{% else %}part{% endif %}">{{ i.kind }}</span>
+                    <span class="record-desc">{{ i.description }}</span>
+                    <span class="muted">{{ i.created_at[:10] }}</span>
+                  </div>
+                  <div class="record-right">
+                    <b>{{ "%.0f"|format(i.amount) }} ₽</b>
+                  </div>
+                </div>
+                {% endfor %}
+              </div>
+              <p class="muted" style="margin:8px 0 0;">
+                Итого по расходам: <b style="color:#e2e8f0;">{{ "%.0f"|format(c.records_total) }} ₽</b>
+              </p>
+            {% else %}
+              <p class="muted" style="margin:0;">Записей нет.</p>
+            {% endif %}
+
+            {% if c.notes %}
+              <h3 style="margin-top:16px;">Заметки</h3>
+              <p class="muted" style="margin:0;">{{ c.notes }}</p>
+            {% endif %}
+
+            <div style="margin-top:16px; display:flex; gap:8px; flex-wrap:wrap;">
+              <form method="post" action="{{ url_for('cars.unmark_sold', car_id=c.id) }}"
+                    onsubmit="return confirm('Вернуть машину в работу?');" style="margin:0;">
+                <button type="submit" class="btn-sm">↩ Вернуть в работу</button>
+              </form>
+              <form method="post" action="{{ url_for('cars.delete', car_id=c.id) }}"
+                    onsubmit="return confirm('Удалить машину вместе со всеми записями?');" style="margin:0;">
+                <button type="submit" class="btn-sm btn-danger">Удалить</button>
+              </form>
+            </div>
+          </div>
+        </details>
+      {% endfor %}
+      </div>
+    {% else %}
+      <p class="muted">Пока нет проданных машин.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
